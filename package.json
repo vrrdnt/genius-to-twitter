@@ -1,23 +1,36 @@
 {
   "name": "genius-to-twitter",
-  "version": "1.0.0",
-  "description": "a docker image for tweeting lyrics from an artist's lyrics on Genius",
+  "version": "2.0.0",
+  "description": "A scheduled Docker bot that posts coherent lyric snippets to X",
+  "type": "module",
   "main": "index.js",
   "scripts": {
-    "debug": "node index.js"
+    "start": "node src/cli.js daemon",
+    "post": "node src/cli.js post",
+    "publish": "node src/cli.js post --publish",
+    "sync": "node src/cli.js sync",
+    "test:live": "node scripts/live-selector-preview.js",
+    "check": "node --test",
+    "test": "node --test"
   },
-  "keywords": [],
-  "author": "",
+  "engines": {
+    "node": ">=24"
+  },
+  "keywords": [
+    "genius",
+    "lyrics",
+    "twitter",
+    "x-api"
+  ],
   "license": "MIT",
   "dependencies": {
-    "dotenv": "^16.4.5",
-    "events": "^3.3.0",
+    "dotenv": "^17.4.2",
     "genius-lyrics": "^4.4.7",
-    "node-cron": "^3.0.3",
-    "node-fetch": "^2.7.0",
-    "twitter-api-v2": "^1.17.2"
+    "node-cron": "^4.6.0",
+    "twitter-api-v2": "^1.29.0",
+    "undici": "^6.27.0"
   },
-  "devDependencies": {
-    "@appnest/readme": "^1.2.7"
+  "overrides": {
+    "undici": "^6.27.0"
   }
 }
