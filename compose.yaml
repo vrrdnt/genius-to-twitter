@@ -1,0 +1,13 @@
+services:
+  lyric-bot:
+    build: .
+    image: genius-to-twitter:local
+    restart: unless-stopped
+    init: true
+    env_file:
+      - ${BOT_ENV_FILE:-.env}
+    volumes:
+      - lyric-bot-data:/data
+
+volumes:
+  lyric-bot-data:

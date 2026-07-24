@@ -7,14 +7,20 @@ node_modules/
 # dotenv environment variables file
 .env
 .env.test
+.env.*
+!.env.example
 
 # WebStorm directories
 .idea
 idea/
 
 # Per-user
-config.js
+/config.js
 
 # Docker
 compose.yaml
+!compose.yaml
 README.Docker.md
+
+# Runtime state (mount /data in Docker)
+data/
