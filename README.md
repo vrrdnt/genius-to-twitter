@@ -13,7 +13,7 @@ The bot is safe by default: scheduled runs are dry runs until `PUBLISH_ENABLED=t
 5. Scores complete stanzas and sentence endings above mid-thought fragments.
 6. Rejects sections explicitly attributed to guests or shared with guests; unlabeled sections remain eligible.
 7. Rejects over-length, excluded-term, and recently posted candidates.
-8. Publishes the lyric, then posts plain-text song and artist attribution as a reply.
+8. Publishes the lyric through X API v2.
 
 The history and song catalog live in `/data`, which must be backed by a persistent Docker volume. Punctuation and intentional casing such as names, `I`, acronyms, and mixed-case words are preserved; ordinary sentence openings are lowercased.
 
@@ -26,16 +26,16 @@ X uses prepaid, pay-per-use credits with no monthly subscription. Its current [o
 - **Post: Create:** $0.015 per request.
 - **Post: Create with URL:** $0.200 per request.
 
-This bot deliberately uses plain-text attribution and does not put a URL in the post. The default `reply` mode makes two Post Create requests per lyric: one for the lyric and one for its attribution reply. At the default three lyrics per day, the 30-day X API cost is approximately **$2.70/month**.
+The bot makes one plain-text Post Create request per lyric and does not add a URL. At the default three lyrics per day, the 30-day X API cost is approximately **$1.35/month**.
 
-| Frequency | Lyrics per 30 days | Create requests in `reply` mode | Approximate X cost |
-| --- | ---: | ---: | ---: |
-| Once daily | 30 | 60 | $0.90 |
-| Default: 3/day | 90 | 180 | $2.70 |
-| 6/day | 180 | 360 | $5.40 |
-| Hourly | 720 | 1,440 | $21.60 |
+| Frequency | Posts per 30 days | Approximate X cost |
+| --- | ---: | ---: |
+| Once daily | 30 | $0.45 |
+| Default: 3/day | 90 | $1.35 |
+| 6/day | 180 | $2.70 |
+| Hourly | 720 | $10.80 |
 
-Use `ATTRIBUTION_MODE=inline` to retain the previous one-request format, which costs approximately $1.35 per 30 days at the default schedule. Failed requests, retries, taxes, and future pricing changes can affect the total. Set a spending limit in the X Developer Console. Adding a URL to every post would use X's separate URL-post rate.
+Failed requests, retries, taxes, and future pricing changes can affect the total. Set a spending limit in the X Developer Console. Adding a URL to every post would use X's separate URL-post rate.
 
 On an existing persistent Docker host, the marginal hosting cost should be close to zero: the process sleeps between runs and stores only small JSON files. If a new VPS is purchased solely for the bot, that provider's monthly server price will likely dominate the API bill. Genius does not provide lyric text through its documented API; `genius-lyrics` retrieves the lyric page, so network use is small but this integration is more fragile than the catalog API.
 
@@ -54,7 +54,7 @@ X permits entertainment-oriented automated posts subject to its [automation rule
 - An X developer app with Read and Write permission.
 - OAuth 1.0a user-context API key, API secret, access token, and access-token secret.
 
-The implementation publishes with `client.v2.tweet()` and `client.v2.reply()`, which call X's current [`POST /2/tweets`](https://docs.x.com/x-api/posts/create-post) endpoint.
+The implementation publishes with `client.v2.tweet()`, which calls X's current [`POST /2/tweets`](https://docs.x.com/x-api/posts/create-post) endpoint.
 
 > Security note: credentials existed in this repository's old Git history. Treat every historical credential as compromised and verify it has been revoked. Never reuse it.
 
@@ -79,7 +79,6 @@ X_ACCESS_TOKEN_SECRET=...
 PUBLISH_ENABLED=false
 POST_SCHEDULE="0 10,14,18 * * *"
 TIMEZONE=UTC
-ATTRIBUTION_MODE=reply
 ```
 
 `ARTIST_IDS` contains comma-separated numeric Genius artist IDs. When lyric headers use a stage name that differs from the Genius artist name, list those header names in `ARTIST_ALIASES`:
@@ -89,14 +88,6 @@ ARTIST_ALIASES=Rory,Rory Ferreira,milo
 ```
 
 `POST_SCHEDULE` is a five-field cron expression. The default runs at 10:00, 14:00, and 18:00 in `TIMEZONE`. Keep `POST_ON_START=false` unless every container restart should trigger a posting attempt.
-
-`ATTRIBUTION_MODE` controls how the credit is published:
-
-- `reply` (default): publish the lyric by itself, then reply with `— Song · Artist`.
-- `inline`: append the credit to the lyric in one Post.
-- `none`: publish only the lyric.
-
-`reply` mode is intentionally easy to reverse: if X rejects the self-reply, change the setting to `inline`. The already-published lyric is still saved to duplicate history before the reply is attempted.
 
 ## Test before publishing
 
@@ -118,7 +109,7 @@ The preview is printed but neither published nor added to duplicate history. Rep
 
 - `MIN_LINES` / `MAX_LINES`: candidate line-count range; defaults to 2–4.
 - `MIN_CHARACTERS`: ignores snippets too short to convey a thought.
-- `MAX_POST_LENGTH`: cannot exceed 280; in `reply` mode it is applied separately to the lyric and attribution.
+- `MAX_POST_LENGTH`: maximum lyric Post length; cannot exceed 280.
 - `EXCLUDED_TERMS`: optional comma-separated, case-insensitive content filter.
 - `MAX_SONG_ATTEMPTS`: songs tried when pages are missing or no suitable snippet exists.
 
@@ -136,7 +127,7 @@ To exercise one real lyric without starting the scheduler:
 docker compose run --rm lyric-bot node src/cli.js post --publish
 ```
 
-This explicit command publishes even if `PUBLISH_ENABLED=false`; use it deliberately. In the default `reply` mode it creates two Posts.
+This explicit command publishes even if `PUBLISH_ENABLED=false`; use it deliberately.
 
 ## Run continuously
 
@@ -183,7 +174,6 @@ npm test           # unit and integration tests with mocked APIs
 - Actual lyric text is obtained from Genius HTML because the official Genius API supplies metadata but not lyrics. Page changes can break retrieval.
 - Deduplication is local to the mounted history file. Running multiple replicas against different volumes can still duplicate posts; run exactly one scheduler replica.
 - Performer filtering depends on Genius artist metadata and section labels. Unlabeled sections are allowed by design, while incorrect or missing Genius credits cannot be detected.
-- [X's self-serve reply documentation](https://docs.x.com/x-api/posts/manage-tweets/introduction) narrowly limits automated replies and does not explicitly guarantee same-account self-replies. If X rejects the attribution reply, the lyric remains published and recorded; use `ATTRIBUTION_MODE=inline` instead.
 - If X accepts a post but the network fails before its response arrives, the local history cannot know it succeeded. Check the account before manually retrying an ambiguous failure.
 
 ## License

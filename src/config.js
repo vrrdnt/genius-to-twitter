@@ -34,18 +34,6 @@ function parseArtistIds(value) {
   });
 }
 
-function parseAttributionMode(env) {
-  const configured = env.ATTRIBUTION_MODE?.trim().toLowerCase();
-  if (configured) {
-    if (!["reply", "inline", "none"].includes(configured)) {
-      throw new Error("ATTRIBUTION_MODE must be reply, inline, or none");
-    }
-    return configured;
-  }
-
-  return parseBoolean(env.INCLUDE_ATTRIBUTION, true) ? "reply" : "none";
-}
-
 export function loadConfig(env = process.env) {
   const dataDir = path.resolve(env.DATA_DIR || "data");
   const minLines = parseInteger(env.MIN_LINES, 2, "MIN_LINES", { min: 1, max: 8 });
@@ -97,7 +85,6 @@ export function loadConfig(env = process.env) {
         min: 40,
         max: 280,
       }),
-      attributionMode: parseAttributionMode(env),
       excludedTerms: parseList(env.EXCLUDED_TERMS).map((term) => term.toLowerCase()),
       artistAliases: parseList(env.ARTIST_ALIASES),
     },

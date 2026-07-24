@@ -38,17 +38,3 @@ export async function publishToX(credentials, text) {
   if (!response?.data?.id) throw new Error("X accepted the request without returning a Post ID");
   return response.data;
 }
-
-export async function replyToX(credentials, text, inReplyToId) {
-  let response;
-  try {
-    response = await createClient(credentials).v2.reply(text, inReplyToId);
-  } catch (error) {
-    throw xRequestError(`Replying to X Post ${inReplyToId}`, error);
-  }
-
-  if (!response?.data?.id) {
-    throw new Error("X accepted the reply without returning a Post ID");
-  }
-  return response.data;
-}

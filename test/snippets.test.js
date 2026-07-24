@@ -148,7 +148,7 @@ And reaches the same destination.`,
   );
 });
 
-test("complete stanza windows outrank fragments and attribution stays within the limit", () => {
+test("complete stanza windows outrank fragments and stay within the limit", () => {
   const lyrics = `[Verse]
 And this begins halfway through a thought
 with words that keep on running
@@ -169,29 +169,24 @@ The city answered back.`;
   assert.ok(candidates.length > 0);
   assert.equal(candidates[0].lines[0], "the morning put its coat on");
   assert.equal(candidates[0].lines.at(-1), "the city answered back.");
-  assert.match(candidates[0].text, /— A Small Song · Example Artist$/);
+  assert.doesNotMatch(candidates[0].text, /A Small Song/u);
   assert.ok(candidates.every((candidate) => candidate.text.length <= 120));
 });
 
-test("reply attribution is separate and deduplication is mode-independent", () => {
-  const options = {
+test("candidate text contains only lyrics", () => {
+  const candidate = buildCandidates({
     lyrics: "[Verse]\nThe morning put its coat on\nThe city answered back.",
     song,
     artistNames: ["Example Artist"],
     minLines: 2,
     maxLines: 2,
-  };
-  const inline = buildCandidates({ ...options, attributionMode: "inline" })[0];
-  const reply = buildCandidates({ ...options, attributionMode: "reply" })[0];
-  const none = buildCandidates({ ...options, attributionMode: "none" })[0];
+  })[0];
 
-  assert.match(inline.text, /— A Small Song · Example Artist$/u);
-  assert.equal(inline.attributionText, null);
-  assert.doesNotMatch(reply.text, /A Small Song/u);
-  assert.equal(reply.attributionText, "— A Small Song · Example Artist");
-  assert.equal(none.attributionText, null);
-  assert.equal(inline.fingerprint, reply.fingerprint);
-  assert.equal(reply.fingerprint, none.fingerprint);
+  assert.equal(
+    candidate.text,
+    "the morning put its coat on\nthe city answered back.",
+  );
+  assert.doesNotMatch(candidate.text, /A Small Song|Example Artist/u);
 });
 
 test("candidate selection avoids recent fingerprints and uses only the top score band", () => {
@@ -274,7 +269,7 @@ NASA watched NeoHooDoo leave.`,
     "Mace Windu held the doorway",
     "NASA watched NeoHooDoo leave.",
   ]);
-  assert.match(candidates[0].text, /— A Small Song · Example Artist$/);
+  assert.doesNotMatch(candidates[0].text, /A Small Song|Example Artist/u);
 });
 
 test("later sentence openings on the same lyric line are also decapitalized", () => {

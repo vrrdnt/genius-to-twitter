@@ -259,18 +259,6 @@ export function calculateRepetitionPenalty(lines) {
   return Math.min(penalty, 12);
 }
 
-function buildPostContents(lines, song, attributionMode) {
-  const snippet = lines.join("\n");
-  const attribution = `— ${song.title} · ${song.artist.name}`;
-  if (attributionMode === "inline") {
-    return { text: `${snippet}\n\n${attribution}`, attributionText: null };
-  }
-  if (attributionMode === "reply") {
-    return { text: snippet, attributionText: attribution };
-  }
-  return { text: snippet, attributionText: null };
-}
-
 function scoreWindow(lines, stanza, start, end) {
   const atStart = start === 0;
   const atEnd = end === stanza.lines.length;
@@ -296,7 +284,6 @@ export function buildCandidates({
   maxLines = 4,
   minCharacters = 35,
   maxPostLength = 280,
-  attributionMode = "inline",
   excludedTerms = [],
 }) {
   const candidates = [];
@@ -331,14 +318,9 @@ export function buildCandidates({
         const formattedLines = lines.map((line) =>
           decapitalizeSentences(line, artistNames),
         );
-        const { text, attributionText } = buildPostContents(
-          formattedLines,
-          song,
-          attributionMode,
-        );
+        const text = formattedLines.join("\n");
         if (text.length > maxPostLength) continue;
-        if (attributionText && attributionText.length > maxPostLength) continue;
-        const id = fingerprint(formattedLines.join("\n"));
+        const id = fingerprint(text);
         if (seen.has(id)) continue;
         seen.add(id);
 
@@ -347,7 +329,6 @@ export function buildCandidates({
           fingerprint: id,
           lines: formattedLines,
           text,
-          attributionText,
           score: scoring.score,
           repetitionPenalty: scoring.repetitionPenalty,
           section: stanza.section.header,

@@ -67,7 +67,6 @@ test("dry runs prepare a post without modifying history", async (context) => {
 test("published posts use X API service and are persisted for deduplication", async (context) => {
   const config = await fixture(context);
   let publishedText;
-  let replyRequest;
   const result = await runPost(config, {
     publish: true,
     logger: silentLogger,
@@ -76,21 +75,13 @@ test("published posts use X API service and are persisted for deduplication", as
       publishedText = text;
       return { id: "123456" };
     },
-    replier: async (_credentials, text, inReplyToId) => {
-      replyRequest = { text, inReplyToId };
-      return { id: "123457" };
-    },
     random: () => 0,
   });
 
   assert.equal(result.published, true);
   assert.equal(result.xPostId, "123456");
-  assert.equal(result.attributionXPostId, "123457");
   assert.equal(publishedText, result.text);
-  assert.deepEqual(replyRequest, {
-    text: "— A Small Song · Example Artist",
-    inReplyToId: "123456",
-  });
+  assert.doesNotMatch(result.text, /A Small Song/u);
   assert.equal((await loadHistory(config.historyFile)).posts[0].xPostId, "123456");
 
   await assert.rejects(
@@ -102,39 +93,6 @@ test("published posts use X API service and are persisted for deduplication", as
       random: () => 0,
     }),
     /no new coherent snippets/,
-  );
-});
-
-test("a failed attribution reply records the lyric post and prevents a duplicate retry", async (context) => {
-  const config = await fixture(context);
-
-  await assert.rejects(
-    runPost(config, {
-      publish: true,
-      logger: silentLogger,
-      lyricsFetcher,
-      publisher: async () => ({ id: "main-post" }),
-      replier: async () => {
-        throw new Error("HTTP 403 | Forbidden");
-      },
-      random: () => 0,
-    }),
-    /Published X Post main-post.*attribution reply failed.*already recorded/su,
-  );
-
-  const history = await loadHistory(config.historyFile);
-  assert.equal(history.posts[0].xPostId, "main-post");
-
-  await assert.rejects(
-    runPost(config, {
-      publish: true,
-      logger: silentLogger,
-      lyricsFetcher,
-      publisher: async () => assert.fail("recorded lyric should not be republished"),
-      replier: async () => assert.fail("no reply should be attempted"),
-      random: () => 0,
-    }),
-    /no new coherent snippets/u,
   );
 });
 

@@ -85,7 +85,6 @@ for (const { artistId, artist } of artists) {
         maxLines: 4,
         minCharacters: 35,
         maxPostLength: 280,
-        attributionMode: "reply",
       });
       const selected = chooseCandidate(candidates, new Set(), () => 0);
 
@@ -104,7 +103,6 @@ for (const { artistId, artist } of artists) {
               characters: selected.text.length,
               lyricWords: selected.lines.join(" ").split(/\s+/u).filter(Boolean).length,
               output: redact ? shortExcerpt(selected) : selected.text,
-              attributionReply: redact ? undefined : selected.attributionText,
             }
           : null,
       });

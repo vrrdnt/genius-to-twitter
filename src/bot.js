@@ -6,7 +6,7 @@ import {
   recordPublishedPost,
 } from "./history.js";
 import { buildCandidates, chooseCandidate } from "./snippets.js";
-import { publishToX, replyToX } from "./x.js";
+import { publishToX } from "./x.js";
 import { assertGeniusConfig, assertXConfig } from "./config.js";
 
 function shuffled(items, random = Math.random) {
@@ -76,7 +76,6 @@ export async function runPost(
     random = Math.random,
     lyricsFetcher = fetchLyrics,
     publisher = publishToX,
-    replier = replyToX,
   } = {},
 ) {
   if (publish) assertXConfig(config);
@@ -88,11 +87,7 @@ export async function runPost(
   });
 
   if (!publish) {
-    let preview = `Dry run (${candidate.section}, score ${candidate.score}):\n\n${candidate.text}`;
-    if (candidate.attributionText) {
-      preview += `\n\nAttribution reply:\n\n${candidate.attributionText}`;
-    }
-    logger.info(preview);
+    logger.info(`Dry run (${candidate.section}, score ${candidate.score}):\n\n${candidate.text}`);
     return { published: false, ...candidate };
   }
 
@@ -109,30 +104,5 @@ export async function runPost(
     config.historyLimit,
   );
   logger.info(`Published X Post ${xPost.id}: ${candidate.song.fullTitle}`);
-
-  let attributionXPostId = null;
-  if (candidate.attributionText) {
-    try {
-      const reply = await replier(
-        config.x,
-        candidate.attributionText,
-        xPost.id,
-      );
-      attributionXPostId = reply.id;
-      logger.info(`Published attribution reply ${reply.id} to X Post ${xPost.id}`);
-    } catch (error) {
-      throw new Error(
-        `Published X Post ${xPost.id}, but its attribution reply failed: ${error.message}. ` +
-          "The lyric Post is already recorded and will not be retried.",
-        { cause: error },
-      );
-    }
-  }
-
-  return {
-    published: true,
-    xPostId: xPost.id,
-    attributionXPostId,
-    ...candidate,
-  };
+  return { published: true, xPostId: xPost.id, ...candidate };
 }
