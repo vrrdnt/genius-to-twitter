@@ -8,6 +8,7 @@ services:
       - ${BOT_ENV_FILE:-.env}
     volumes:
       - lyric-bot-data:/data
+    pull_policy: build
 
 volumes:
   lyric-bot-data:
