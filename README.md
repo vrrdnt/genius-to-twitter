@@ -17,6 +17,16 @@ The bot is safe by default: scheduled runs are dry runs until `PUBLISH_ENABLED=t
 
 The history and song catalog live in `/data`, which must be backed by a persistent Docker volume. Punctuation and intentional casing such as names, `I`, acronyms, and mixed-case words are preserved; ordinary sentence openings are lowercased.
 
+Lyric pages that return HTTP 403 or a Cloudflare challenge are retried once with
+[`curl_cffi`](https://curl-cffi.readthedocs.io/en/latest/quick_start.html), using its
+Chrome-compatible HTTP client. The Docker image includes this fallback. Both
+requests have timeouts; a remaining challenge or a page without lyrics fails the
+run instead of being used as post text. HTTP 429 is not retried by the fallback.
+
+When running outside Docker, install the fallback with
+`python3 -m pip install -r requirements-lyrics.txt`. Set `LYRICS_PYTHON` to the
+Python executable if it is not available as `python3`.
+
 ## Cost
 
 These figures were checked on July 18, 2026. X can change its rates, so confirm them in the [X Developer Console](https://console.x.com/) before enabling publishing.

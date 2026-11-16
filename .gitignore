@@ -9,6 +9,9 @@ node_modules/
 .env.test
 .env.*
 !.env.example
+stack.env
+.venv/
+__pycache__/
 
 # WebStorm directories
 .idea

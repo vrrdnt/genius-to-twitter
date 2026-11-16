@@ -27,6 +27,7 @@
     "dotenv": "^17.4.2",
     "genius-lyrics": "^4.4.7",
     "node-cron": "^4.6.0",
+    "node-html-parser": "6.1.13",
     "twitter-api-v2": "^1.29.0",
     "undici": "^6.27.0"
   },

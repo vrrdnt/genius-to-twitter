@@ -1,4 +1,5 @@
 import Genius from "genius-lyrics";
+import { fetchGeniusLyrics } from "./lyrics.js";
 
 function createClient(accessToken) {
   return new Genius.Client(accessToken);
@@ -56,6 +57,6 @@ export async function fetchLyrics(accessToken, songId) {
   const song = await client.songs.get(songId);
   return {
     song: serializeSong(song),
-    lyrics: await song.lyrics(),
+    lyrics: await fetchGeniusLyrics(song.url),
   };
 }
